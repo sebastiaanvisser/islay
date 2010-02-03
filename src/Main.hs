@@ -6,9 +6,9 @@ import Control.Monad.State
 import Data.Char
 import Data.List
 import Data.OBO
-import Prelude
-import Generics.Regular.Seq
+import Generics.Regular.Functions.Seq
 import Heap.Heap
+import Prelude
 import System.Environment
 import System.IO
 import qualified Container.Tree.PersistentCont as C

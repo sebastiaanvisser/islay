@@ -1,4 +1,8 @@
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE
+    UndecidableInstances
+  , FlexibleInstances
+  , MultiParamTypeClasses
+  #-}
 module Annotation.Debug where
 
 import Control.Applicative

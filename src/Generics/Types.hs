@@ -55,7 +55,7 @@ type Suc3 c = Succ (Suc2 c)
 
 type family Pred a
 type instance Pred (Succ c) = c
-type instance Pred  Zero    = Void
+-- type instance Pred  Zero    = Void
 
 type family   Fmap (f :: * -> *) a
 type instance Fmap f (a, b)       = (a, f b)
@@ -161,22 +161,4 @@ type HPara f g = f (HFix f :*: g) :~> g
 
 hpara :: HFunctor f => HPara f a -> HFix f :~> a
 hpara f (HIn u) = f (hfmap (\x -> x :*: hpara f x) u)
-
-newtype Ran g h a = Ran { unRan :: (a -> g) -> h }
-
--- gfold :: HAlg f g -> (HFix f :.: g) :~> h
--- gfold = undefined
-
--- gfoldk :: HFunctor h => (h (Ran g f) :~> Ran g f) -> (a -> g) -> FixA h a -> f
--- gfoldk alg g m = unRan (hfold alg m) g
-
-
--- Fixed point combinator for nested data types with regular nesting.
-
-type family Nest (h :: * -> *) :: * -> *
-
-newtype NFixA a h = NIn { nout :: a h (NFixA a (Nest h)) }
-
-type NFixA1 a h =   h (NFixA a (Nest h))
-type NFixA2 a h = a h (NFixA a (Nest h))
 

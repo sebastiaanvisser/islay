@@ -1,4 +1,10 @@
-{-# LANGUAGE TypeSynonymInstances, UndecidableInstances #-}
+{-# lANGUAGE
+    TypeOperators
+  , TypeSynonymInstances
+  , UndecidableInstances
+  , FlexibleInstances
+  , MultiParamTypeClasses
+  #-}
 module Annotation.Persistent where
 
 import Control.Applicative

@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -F -pgmF she #-}
+{-# LANGUAGE GADTs, FlexibleContexts, RankNTypes, KindSignatures #-}
 module Generics.Morphism.Para where
 
 import Annotation.Annotation
@@ -9,7 +10,7 @@ import Control.Monad.Identity
 import Control.Monad.Lazy
 import Data.Foldable
 import Data.Traversable
-import Generics.Regular.Seq
+import Generics.Regular.Functions.Seq
 import Generics.Types
 import Prelude hiding ((.), id, mapM)
 
@@ -78,25 +79,25 @@ para psi = runIdentity . paraM psi
 
 -- Strict paramorphism in a monadic context for annotated structures.
 
-paraMA' :: (DSeq r, Traversable f, Lazy m, AnnQ a f m) => AlgA a f r -> FixA a f -> m r
-paraMA' psi f = dseqId <$> paraMA psi f
+paraMA' :: (DeepSeq r, Traversable f, Lazy m, AnnQ a f m) => AlgA a f r -> FixA a f -> m r
+paraMA' psi f = (\a -> dseq a a) <$> paraMA psi f
 
 -- Strict paramorphism in a monadic context for structures without annotations.
 
-paraM' :: (DSeq r, Traversable f, Applicative m, Monad m, Lazy m) => AlgA Id f r -> Fix f -> m r
+paraM' :: (DeepSeq r, Traversable f, Applicative m, Monad m, Lazy m) => AlgA Id f r -> Fix f -> m r
 paraM' = paraMA'
 
 -- Strict paramorphism for annotated structures.
 
-paraA' :: (DSeq c, Traversable f, AnnQ a f Identity) => AlgA a f c -> FixA a f -> c
+paraA' :: (DeepSeq c, Traversable f, AnnQ a f Identity) => AlgA a f c -> FixA a f -> c
 paraA' psi = runIdentity . paraMA' psi
 
 -- Strict paramorphism for structures without annotations.
 
-para' :: (DSeq c, Traversable f) => AlgA Id f c -> Fix f -> c
+para' :: (DeepSeq c, Traversable f) => AlgA Id f c -> Fix f -> c
 para' psi = runIdentity . paraM' psi
 
-type EndoA a f = AlgA a f (FixA a f :+: f (FixA a f))
+type EndoA a f = AlgA a f (Either (FixA a f) (f (FixA a f)))
 type Endo f = forall a. EndoA a f
 
 toEndo :: Functor f => AlgA a f (FixA a f) -> EndoA a f

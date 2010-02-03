@@ -1,4 +1,10 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE
+    TypeOperators
+  , KindSignatures
+  , GeneralizedNewtypeDeriving
+  , TemplateHaskell
+  #-}
+
 module Heap.Block where
 
 import Data.Binary

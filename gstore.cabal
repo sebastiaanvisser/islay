@@ -8,6 +8,7 @@ License-file:     LICENSE
 Author:           Sebastiaan Visser
 Maintainer:       sfvisser@cs.uu.nl
 Build-Type:       Simple
+Cabal-Version:    >= 1.2
 
 Library
   GHC-Options:      -threaded -Wall -fno-warn-orphans -O
@@ -16,7 +17,7 @@ Library
   Build-Depends:    QuickCheck,
                     random,
                     bytestring,
-                    base,
+                    base ==4.*,
                     binary,
                     utf8-string,
                     containers,
@@ -25,7 +26,7 @@ Library
                     monads-fd,
                     transformers,
                     regular,
-                    regular-binary,
+                    regular-extras,
                     unix
 
   Exposed-modules:  Annotation.Annotation
@@ -45,9 +46,6 @@ Library
                     Generics.Morphism.Apo
                     Generics.Morphism.Cata
                     Generics.Morphism.Para
-                    Generics.Regular.Arbitrary
-                    Generics.Regular.Fixpoints
-                    Generics.Regular.Seq
                     Generics.Types
                     Heap.Alloc
                     Heap.Block
@@ -56,15 +54,9 @@ Library
                     Heap.Write
                     System.IO.Binary
 
-  Extensions:       FlexibleContexts
-                    FlexibleInstances 
-                    RankNTypes
-                    EmptyDataDecls
-                    ScopedTypeVariables
-                    TypeOperators
-                    MultiParamTypeClasses
-                    KindSignatures
-                    GeneralizedNewtypeDeriving
-                    TypeFamilies
-                    GADTs
+Executable          gs
+  Executable:       gs
+  Main-is:          Main.hs
+  GHC-Options:      -threaded -Wall -fno-warn-orphans
+  HS-Source-Dirs:   src 
 

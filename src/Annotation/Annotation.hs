@@ -1,3 +1,7 @@
+{-# LANGUAGE
+    MultiParamTypeClasses
+  , FlexibleInstances
+  #-}
 module Annotation.Annotation where
 
 import Control.Applicative

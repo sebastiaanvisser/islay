@@ -1,4 +1,9 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE
+    TemplateHaskell
+  , TypeOperators
+  , MultiParamTypeClasses
+  , GeneralizedNewtypeDeriving
+  #-}
 module Heap.Alloc where
 
 import Control.Applicative

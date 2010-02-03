@@ -41,9 +41,6 @@ data Tree (a :: *) (f :: * -> *) :: * -> * where
   Node3  :: f (Nd, c) -> f (Nd, c) -> f (Nd, c)              -> Tree a f (Nd, Succ c)
   Value  :: a                                                -> Tree a f (Nd, Zero)
 
-  Up   :: f (x, c) -> Tree a f (x, Succ c)
-  Down :: f (x, Succ c) -> Tree a f (x, c)
-
 -- Pretty names for common structures.
 
 type Node       a c = HFix (Tree a) (Nd, c)
@@ -217,25 +214,37 @@ data Dec f ix = Dec { unDec :: f (Fst ix, Pred (Snd ix)) }
 h :: (:*:) f g ix -> f ix
 h = hfst
 
+data a :=: b where
+  Refl :: a :=: a
+
+data Proof :: * -> * where
+  NonZero :: forall c. Proof (Succ c)
+
+
+eqtest :: a :=: Int -> a -> Int
+eqtest Refl b = b * 20
+
+
 insertAlg
   :: f ~ Tree a
   => g ~ (N (Dec (HFix f)) :-> HFix f :*: N (HFix f))
-  => Inc (f (HFix f :*: g)) :~> Inc g
+--   => ix ~ Succ c
+  => (f (HFix f :*: g)) (p, Succ ix) -> g (p, Succ ix)
 
-insertAlg (Inc u@(Empty         )) = Inc . F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> single (digit1 z)            :*: N Nothing                          ) . unN
-insertAlg (Inc u@(Single b      )) = Inc . F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> deep (h b) empty_ (digit1 z) :*: N Nothing                          ) . unN
-insertAlg (Inc u@(Digit1 b      )) = Inc . F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> digit2 z (h b)               :*: N Nothing                          ) . unN
-insertAlg (Inc u@(Digit2 b c    )) = Inc . F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> digit3 z (h b) (h c)         :*: N Nothing                          ) . unN
-insertAlg (Inc u@(Digit3 b c d  )) = Inc . F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> digit4 z (h b) (h c) (h d)   :*: N Nothing                          ) . unN
-insertAlg (Inc u@(Digit4 b c d e)) = Inc . F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> digit2 z (h b)               :*: N (Just (node3 (h c) (h d) (h e))) ) . unN
-insertAlg (Inc u@(Node2  b c    )) = Inc . F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> node3  z (h b) (h c)         :*: N Nothing                          ) . unN
-insertAlg (Inc u@(Node3  b c d  )) = Inc . F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> node2  z (h b)               :*: N (Just (node2 (h c) (h d)))       ) . unN
-insertAlg (Inc u@(Deep   b m sf )) = Inc . F $ maybe (HIn (hfmap h u) :*: N Nothing) (\z -> let _b = hsnd b # N (Just z)
-                                                                                                _m = hsnd m # N (fmap Dec (unN (hsnd _b)))
-                                                                                            in deep (h b) (h _m) (h sf)        :*: N Nothing                          ) . unN
+-- insertAlg NonZero u@(Empty         ) = F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> single (digit1 z)            :*: N Nothing                          ) . unN
+-- insertAlg NonZero u@(Single b      ) = F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> deep (h b) empty_ (digit1 z) :*: N Nothing                          ) . unN
+insertAlg u@(Digit1 b      ) = F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> digit2 z (h b) :*: N Nothing) . unN -- maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> digit2 z (h b)               :*: N Nothing                          ) . unN
+-- insertAlg NonZero u@(Digit2 b c    ) = F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> digit3 z (h b) (h c)         :*: N Nothing                          ) . unN
+-- insertAlg NonZero u@(Digit3 b c d  ) = F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> digit4 z (h b) (h c) (h d)   :*: N Nothing                          ) . unN
+-- insertAlg NonZero u@(Digit4 b c d e) = F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> digit2 z (h b)               :*: N (Just (node3 (h c) (h d) (h e))) ) . unN
+-- insertAlg NonZero u@(Node2  b c    ) = F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> node3  z (h b) (h c)         :*: N Nothing                          ) . unN
+-- insertAlg NonZero u@(Node3  b c d  ) = F $ maybe (HIn (hfmap h u) :*: N Nothing) (\(Dec z) -> node2  z (h b)               :*: N (Just (node2 (h c) (h d)))       ) . unN
+-- insertAlg NonZero u@(Deep   b m sf ) = F $ maybe (HIn (hfmap h u) :*: N Nothing) (\z -> let _b = hsnd b # N (Just z)
+--                                                                                             _m = hsnd m # N (fmap Dec (unN (hsnd _b)))
+--                                                                                         in deep (h b) (h _m) (h sf)        :*: N Nothing                          ) . unN
 
-type HPara2 f g p c = f (HFix f :*: g) (p, Succ c) -> g (p, Succ c)
+-- type HParaP f g = f (HFix f :*: g) :~> g
 
-hpara2 :: HFunctor f => HPara2 f g p c -> (HFix f) (p, Succ c) -> g (p, Succ c)
-hpara2 f (HIn u) = f (hfmap (\x -> x :*: undefined ) u)
+-- hparaP :: HFunctor f => p ix -> HParaP f a -> HFix f :~> a
+-- hparaP p f (HIn u) = f p (hfmap (\x -> x :*: hparaP f x) u)
 

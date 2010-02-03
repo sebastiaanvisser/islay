@@ -1,20 +1,20 @@
 {-# LANGUAGE
-    TypeFamilies
-  , TemplateHaskell
+    EmptyDataDecls
   , GADTs
   , KindSignatures
-  , EmptyDataDecls
-  , TypeSynonymInstances
   , MultiParamTypeClasses
+  , TemplateHaskell
+  , TypeFamilies
+  , TypeSynonymInstances
   #-}
 module Data.OBO.Entry where
 
 import Data.Binary
 import Data.OBO.Document
 import Generics.Regular.Base
-import Generics.Regular.Binary
-import Generics.Regular.Seq
+import Generics.Regular.Functions.Seq
 import Generics.Regular.TH
+import qualified Generics.Regular.Functions.Binary as B
 
 -- Single ontology entry.
 
@@ -48,10 +48,10 @@ instance Ord Entry where
 -- Generic view on entries.
 
 instance Binary Entry where
-  put = gput
-  get = gget
+  put = B.gput
+  get = B.gget
 
-instance DSeq Entry where
+instance DeepSeq Entry where
   dseq = gdseq
 
 -- Convert a generic OBO stanza to a specific entry.

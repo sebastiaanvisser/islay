@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Control.Monad.Lazy where
 
 import Control.Monad.Identity

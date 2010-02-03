@@ -1,3 +1,10 @@
+{-# LANGUAGE
+    TypeOperators
+  , GADTs
+  , KindSignatures
+  , FlexibleContexts
+  , RankNTypes
+  #-}
 module Generics.Morphism.Apo where
 
 import Annotation.Annotation
@@ -11,7 +18,7 @@ import Generics.Types
 import Prelude hiding ((.), id, mapM)
 
 data CoalgA (a :: (* -> *) -> * -> *) (f :: * -> *) (s :: *) where
-  Phi :: (s -> f (s :+: FixA a f)) -> CoalgA a f s
+  Phi :: (s -> f (Either s (FixA a f))) -> CoalgA a f s
 
 type Coalg s f = forall a. CoalgA a f s
 
@@ -27,7 +34,7 @@ apoA phi = runIdentity . apoMA phi
 apo :: Traversable f => CoalgA Id f s -> s -> Fix f
 apo phi = runIdentity . apoM phi
 
-type EndoA a f = f (FixA a f) -> f (FixA a f :+: (FixA a f :+: f (FixA a f)))
+type EndoA a f = f (FixA a f) -> f (Either (FixA a f) (Either (FixA a f) (f (FixA a f))))
 type Endo    f = forall a. EndoA a f
 
 endoMA

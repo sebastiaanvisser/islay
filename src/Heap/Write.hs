@@ -1,3 +1,8 @@
+{-# LANGUAGE
+    MultiParamTypeClasses
+  , DeriveFunctor
+  , GeneralizedNewtypeDeriving
+  #-}
 module Heap.Write where
 
 import Control.Applicative

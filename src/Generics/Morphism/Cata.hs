@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs, FlexibleContexts, RankNTypes, KindSignatures #-}
 module Generics.Morphism.Cata where
 
 import Annotation.Annotation
