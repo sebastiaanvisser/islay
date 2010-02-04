@@ -6,6 +6,7 @@
   , TypeFamilies
   , RankNTypes
   , KindSignatures
+  , GADTs
  #-}
 module Generics.Types where
 
@@ -110,6 +111,14 @@ data (f :.: g) a = C { unC :: f (g a) }
 instance (Applicative f, Applicative g) => Applicative (f :.: g) where
   pure        = C . pure . pure
   C a <*> C b = C ((<*>) <$> a <*> b)
+
+-- Type equalities.
+
+data EQ a b where
+  Refl :: EQ a a
+
+cast :: EQ a b -> a -> b
+cast Refl a = a
 
 -- Naturial transformation.
 
