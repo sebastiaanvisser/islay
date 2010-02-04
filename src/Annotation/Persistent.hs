@@ -4,10 +4,13 @@
   , UndecidableInstances
   , FlexibleInstances
   , MultiParamTypeClasses
+  , GeneralizedNewtypeDeriving
   #-}
 module Annotation.Persistent where
 
+import Prelude hiding ((.))
 import Control.Applicative
+import Control.Category
 import Control.Arrow
 import Control.Monad.Lazy
 import Data.Binary
@@ -15,16 +18,19 @@ import Annotation.Annotation
 import Generics.Types
 import Heap.Heap
 
-instance Binary (f (FixA Pointer f)) => AnnQ Pointer f HeapR where
-  query = Kleisli (retrieve . out)
+newtype P f a = P { unP :: Pointer (f a) }
+  deriving Binary
 
-instance Binary (f (FixA Pointer f)) => AnnQ Pointer f HeapW where
-  query = Kleisli (liftLazy . retrieve . out)
+instance Binary (f (FixA P f)) => AnnQ P f HeapR where
+  query = Kleisli (retrieve . unP . out)
 
-instance Binary (f (FixA Pointer f)) => AnnP Pointer f HeapW where
-  produce = Kleisli (fmap In . store)
+instance Binary (f (FixA P f)) => AnnQ P f HeapW where
+  query = Kleisli (liftLazy . retrieve . unP . out)
 
-instance Binary (f (FixA Pointer f)) => AnnM Pointer f HeapW where
+instance Binary (f (FixA P f)) => AnnP P f HeapW where
+  produce = Kleisli (fmap (In . P) . store)
+
+instance Binary (f (FixA P f)) => AnnM P f HeapW where
 
 instance Binary (a f (FixA a f)) => Binary (FixA a f) where
   put = put . out

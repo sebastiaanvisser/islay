@@ -1,6 +1,5 @@
 {-# LANGUAGE
     TypeOperators
-  , KindSignatures
   , GeneralizedNewtypeDeriving
   , TemplateHaskell
   #-}
@@ -29,10 +28,10 @@ payload  :: Block :-> Maybe ByteString
 size     :: Block :-> Size
 offset   :: Block :-> Offset
 
-newtype Pointer (f :: * -> *) a = Ptr { unPtr :: Offset }
+newtype Pointer a = Ptr { unPtr :: Offset }
   deriving (Show, Binary)
 
-nullPtr :: Pointer f a
+nullPtr :: Pointer a
 nullPtr = Ptr 0
 
 -- Constant values.

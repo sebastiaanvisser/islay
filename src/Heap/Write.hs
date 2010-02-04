@@ -36,14 +36,14 @@ instance LiftLazy R.Heap Heap where
 
 -- Top level exposed.
 
-store :: Binary (f a) => f a -> Heap (Pointer f a)
+store :: Binary a => a -> Heap (Pointer a)
 store f =
   do let bits = encode f
      block <- (Heap . A.allocate . fromIntegral . B.length) bits
      write bits block
      return (Ptr (_offset block))
 
-unsafeReuse :: Binary (f a) => Pointer f a -> f a -> Heap ()
+unsafeReuse :: Binary a => Pointer a -> a -> Heap ()
 unsafeReuse (Ptr o) d =
   do h <- ask
      liftIO $

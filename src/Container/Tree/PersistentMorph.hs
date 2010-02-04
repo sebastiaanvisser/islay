@@ -1,6 +1,6 @@
 module Container.Tree.PersistentMorph where
 
-import Annotation.Persistent ()
+import Annotation.Persistent (P)
 import Data.Binary
 import Generics.Regular.Functions.Seq
 import Generics.Types
@@ -10,7 +10,7 @@ import qualified Container.Tree.Morph as M
 import qualified Generics.Morphism.Apo as Apo
 import qualified Generics.Morphism.Para as Para
 
-type Map k v = FixA2 Pointer (F.Tree k v)
+type Map k v = FixA2 P (F.Tree k v)
 
 insert :: (Ord k, Binary k, Binary v) => k -> v -> Map k v -> HeapW (Map k v)
 insert k v = fmap out . Apo.endoMA (M.insert k v) . In

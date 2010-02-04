@@ -1,6 +1,6 @@
 module Container.Tree.PersistentCont where
 
-import Annotation.Persistent ()
+import Annotation.Persistent (P)
 import Control.Applicative
 import Data.Binary
 import Data.Maybe
@@ -12,7 +12,7 @@ import Prelude hiding (lookup, null)
 import qualified Container.Tree.Abstract as F
 import qualified Container.Tree.Cont     as C
 
-type Map k v = FixA2 Pointer (F.Tree k v)
+type Map k v = FixA2 P (F.Tree k v)
 
 empty :: (Binary k, Binary v) => HeapW (Map k v)
 empty = mkProducer C.empty

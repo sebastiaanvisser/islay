@@ -25,7 +25,7 @@ newtype Heap a = Heap (ReaderT Handle IO a)
 run :: Handle -> Heap a -> IO a
 run h (Heap c) = runReaderT c h
 
-retrieve :: Binary (f a) => Pointer f a -> Heap (f a)
+retrieve :: Binary a => Pointer a -> Heap a
 retrieve (Ptr p) = decode . fm <$> read p
   where fm = fromMaybe (error "retrieve failed")
 

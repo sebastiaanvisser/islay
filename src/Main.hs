@@ -1,5 +1,6 @@
 module Main where
 
+import Annotation.Persistent
 import Control.Applicative
 import Control.Monad.Lazy
 import Control.Monad.State
@@ -50,10 +51,10 @@ build source db =
          do let stanzas = docStanzas doc
                 entries = map stanzaToEntry stanzas
             run db $
-              do o <- store nullPtr
+              do o <- store (P nullPtr)
                  p <- fromList entries
                  liftIO (putStrLn [])
-                 liftIO (print (o, p))
+                 liftIO (print (o, unP p))
                  unsafeReuse o p
                  liftIO (print "done")
                  return ()
