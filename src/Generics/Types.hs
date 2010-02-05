@@ -6,6 +6,7 @@
   , TypeFamilies
   , RankNTypes
   , KindSignatures
+  , MultiParamTypeClasses
   , GADTs
  #-}
 module Generics.Types where
@@ -170,4 +171,16 @@ type HPara f g = f (HFix f :*: g) :~> g
 
 hpara :: HFunctor f => HPara f a -> HFix f :~> a
 hpara f (HIn u) = f (hfmap (\x -> x :*: hpara f x) u)
+
+
+
+
+
+class PFunctor phi h where
+  pfmap :: (forall jx. phi jx -> a jx -> b jx) -> forall ix. phi ix -> h a ix -> h b ix
+
+type PPara phi f g = forall ix. phi ix -> f (HFix f :*: g) ix -> g ix
+
+ppara :: PFunctor phi f => PPara phi f g -> phi ix -> HFix f ix -> g ix
+ppara f phi (HIn u) = f phi (pfmap (\p x -> x :*: ppara f p x) phi u)
 

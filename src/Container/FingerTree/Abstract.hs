@@ -8,6 +8,7 @@
   , TypeOperators
   , MultiParamTypeClasses
   , FlexibleContexts
+  , FlexibleInstances
  #-}
 module Container.FingerTree.Abstract where
 
@@ -93,6 +94,18 @@ instance HFunctor (Tree a) where
   hfmap f (Node2  a b    ) = Node2  (f a) (f b)
   hfmap f (Node3  a b c  ) = Node3  (f a) (f b) (f c)
   hfmap _ (Value  a      ) = Value  a
+
+instance PFunctor phi (Tree a) where
+  pfmap _ _ (Empty         ) = Empty
+  pfmap f _ (Single a      ) = Single (f undefined a)
+  pfmap f _ (Deep   a c b  ) = Deep   (f undefined a) (f undefined c) (f undefined b)
+  pfmap f _ (Digit1 a      ) = Digit1 (f undefined a)
+  pfmap f _ (Digit2 a b    ) = Digit2 (f undefined a) (f undefined b)
+  pfmap f _ (Digit3 a b c  ) = Digit3 (f undefined a) (f undefined b) (f undefined c)
+  pfmap f _ (Digit4 a b c d) = Digit4 (f undefined a) (f undefined b) (f undefined c) (f undefined d)
+  pfmap f _ (Node2  a b    ) = Node2  (f undefined a) (f undefined b)
+  pfmap f _ (Node3  a b c  ) = Node3  (f undefined a) (f undefined b) (f undefined c)
+  pfmap _ _ (Value  a      ) = Value  a
 
 instance HFoldable (Tree a) where
   hfoldMap _ (Empty         ) = K mempty
@@ -210,11 +223,16 @@ data N   f ix = N   { unN   :: Maybe (f (Nd, Snd ix))    }
 data Inc f ix = Inc { unInc :: f (Fst ix, Succ (Snd ix)) }
 data Dec f ix = Dec { unDec :: f (Fst ix, Pred (Snd ix)) }
 
+insertAlg
+  :: f ~ Tree a
+  => g ~ (N (Dec (HFix f)) :-> HFix f :*: N (HFix f))
+  => PPara (EQ (p, Succ c)) (Tree a) g
+insertAlg Refl = insertAlg'
+
 insertAlg'
   :: f ~ Tree a
   => g ~ (N (Dec (HFix f)) :-> HFix f :*: N (HFix f))
   => f (HFix f :*: g) (p, Succ c) -> g (p, Succ c)
-
 insertAlg' u@(Empty         ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> single (digit1 z)               :*: N Nothing                          ) . unN
 insertAlg' u@(Single b      ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> deep (hfst b) empty_ (digit1 z) :*: N Nothing                          ) . unN
 insertAlg' u@(Digit1 b      ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> digit2 z (hfst b)               :*: N Nothing                          ) . unN
@@ -227,24 +245,7 @@ insertAlg' u@(Deep   b m sf ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\z
                                                                                         _m = hsnd m # N (fmap Dec (unN (hsnd _b)))
                                                                                     in deep (hfst b) (hfst _m) (hfst sf)  :*: N Nothing                          ) . unN
 
-insertAlg
-  :: g ~ (N (Dec (HFix (Tree a))) :-> HFix (Tree a) :*: N (HFix (Tree a)))
-  => HPara2 (Tree a) g (EQ (p, Succ c))
-insertAlg Refl = insertAlg'
-
-class HFunctor2 h where
-  hfmap2 :: (forall jx. phi jx -> a jx -> b jx) -> phi ix -> h a ix -> h b ix
-
-type HPara2 f g phi = forall ix. phi ix -> f (HFix f :*: g) ix -> g ix
-
-hpara2 :: HFunctor2 f => HPara2 f g phi -> phi ix -> HFix f ix -> g ix
-hpara2 f phi (HIn u) = f phi (hfmap2 (\p x -> x :*: hpara2 f p x) phi u)
-
-insert
-  :: HFunctor2 (Tree a)
-  => Value a
-  -> FingerTree a
-  -> FingerTree a
-insert inp h = hfst (hpara2 insertAlg Refl h # N (Just (Dec inp)))
+insert :: Value a -> FingerTree a -> FingerTree a
+insert inp h = hfst $ ppara insertAlg Refl h # (N . Just . Dec) inp
 
 
