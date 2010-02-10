@@ -7,6 +7,7 @@
   , RankNTypes
   , KindSignatures
   , MultiParamTypeClasses
+  , FlexibleContexts
   , GADTs
  #-}
 module Generics.Types where
@@ -173,6 +174,24 @@ hpara :: HFunctor f => HPara f a -> HFix f :~> a
 hpara f (HIn u) = f (hfmap (\x -> x :*: hpara f x) u)
 
 
+
+
+class Proof phi ix where
+  proof :: phi ix
+
+data NatPrf :: * -> * where
+  ZeroP :: NatPrf Zero
+  SuccP :: NatPrf n -> NatPrf (Succ n)
+
+instance Show (NatPrf ix) where
+  show ZeroP     = "ZeroP"
+  show (SuccP p) = "(SuccP" ++ show p ++ ")"
+
+instance Proof NatPrf Zero where
+  proof = ZeroP
+      
+instance Proof NatPrf a => Proof NatPrf (Succ a) where
+  proof = SuccP proof
 
 
 

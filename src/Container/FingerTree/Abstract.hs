@@ -14,7 +14,8 @@ module Container.FingerTree.Abstract where
 
 import Prelude hiding (foldr, foldl, sum, lookup)
 import Control.Applicative
-import Data.Foldable hiding (toList, sum)
+import Data.Foldable hiding (toList, sum, concat)
+import Data.List (intercalate)
 import Data.Monoid
 import Generics.Types
 
@@ -27,19 +28,49 @@ data Sp
 data Dg
 data Nd
 
+instance Show Sp where show _ = "Sp"
+instance Show Dg where show _ = "Dg"
+instance Show Nd where show _ = "Nd"
+
+data IxPrf :: * -> * where
+  SpPrf  :: NatPrf c -> IxPrf (Sp, Succ c)
+  DgPrf  :: NatPrf c -> IxPrf (Dg, Succ c)
+  NdPrf  :: NatPrf c -> IxPrf (Nd, Succ c)
+  NdZPrf :: IxPrf (Nd, Zero)
+
+instance Proof NatPrf c => Proof IxPrf (Sp, Succ c) where proof = SpPrf proof
+instance Proof NatPrf c => Proof IxPrf (Dg, Succ c) where proof = DgPrf proof
+instance Proof NatPrf c => Proof IxPrf (Nd, Succ c) where proof = NdPrf proof
+
+instance Show (IxPrf a) where
+  show (SpPrf p) = "(Spc_P " ++ show p ++ ")"
+  show (DgPrf p) = "(DgS_P " ++ show p ++ ")"
+  show (NdPrf p) = "(Ndc_P " ++ show p ++ ")"
+  show NdZPrf    = "NdZ_P"
+
 data Tree (a :: *) (f :: * -> *) :: * -> * where
-  Empty  ::                                                     Tree a f (Sp, c)
-  Single :: f (Dg, c)                                        -> Tree a f (Sp, c)
-  Deep   :: f (Dg, c) -> f (Sp, Succ c) -> f (Dg, c)         -> Tree a f (Sp, c)
+  Empty  ::                                                       Tree a f (Sp, Succ c)
+  Single :: f (Dg, Succ c)                                     -> Tree a f (Sp, Succ c)
+  Deep   :: f (Dg, Succ c) -> f (Sp, Suc2 c) -> f (Dg, Succ c) -> Tree a f (Sp, Succ c)
+  Digit1 :: f (Nd, c)                                          -> Tree a f (Dg, Succ c)
+  Digit2 :: f (Nd, c) -> f (Nd, c)                             -> Tree a f (Dg, Succ c)
+  Digit3 :: f (Nd, c) -> f (Nd, c) -> f (Nd, c)                -> Tree a f (Dg, Succ c)
+  Digit4 :: f (Nd, c) -> f (Nd, c) -> f (Nd, c) -> f (Nd, c)   -> Tree a f (Dg, Succ c)
+  Node2  :: f (Nd, c) -> f (Nd, c)                             -> Tree a f (Nd, Succ c)
+  Node3  :: f (Nd, c) -> f (Nd, c) -> f (Nd, c)                -> Tree a f (Nd, Succ c)
+  Value  :: a                                                  -> Tree a f (Nd, Zero)
 
-  Digit1 :: f (Nd, c)                                        -> Tree a f (Dg, Succ c)
-  Digit2 :: f (Nd, c) -> f (Nd, c)                           -> Tree a f (Dg, Succ c)
-  Digit3 :: f (Nd, c) -> f (Nd, c) -> f (Nd, c)              -> Tree a f (Dg, Succ c)
-  Digit4 :: f (Nd, c) -> f (Nd, c) -> f (Nd, c) -> f (Nd, c) -> Tree a f (Dg, Succ c)
-
-  Node2  :: f (Nd, c) -> f (Nd, c)                           -> Tree a f (Nd, Succ c)
-  Node3  :: f (Nd, c) -> f (Nd, c) -> f (Nd, c)              -> Tree a f (Nd, Succ c)
-  Value  :: a                                                -> Tree a f (Nd, Zero)
+instance Show a => Show (HFix (Tree a) ix) where
+  show (HIn (Empty         )) = intercalate " " ["Empty"]
+  show (HIn (Single a      )) = intercalate " " ["(Single" , show a] ++ ")"
+  show (HIn (Deep   a c b  )) = intercalate " " ["(Deep"   , show a, show c, show b] ++ ")"
+  show (HIn (Digit1 a      )) = intercalate " " ["(Digit1" , show a] ++ ")"
+  show (HIn (Digit2 a b    )) = intercalate " " ["(Digit2" , show a, show b] ++ ")"
+  show (HIn (Digit3 a b c  )) = intercalate " " ["(Digit3" , show a, show b, show c] ++ ")"
+  show (HIn (Digit4 a b c d)) = intercalate " " ["(Digit4" , show a, show b, show c, show d] ++ ")"
+  show (HIn (Node2  a b    )) = intercalate " " ["(Node2"  , show a, show b] ++ ")"
+  show (HIn (Node3  a b c  )) = intercalate " " ["(Node3"  , show a, show b, show c] ++ ")"
+  show (HIn (Value  a      )) = intercalate " " ["(Value"  , show a] ++ ")"
 
 -- Pretty names for common structures.
 
@@ -51,13 +82,13 @@ type FingerTree a   = HFix (Tree a) (Sp, One)
 
 -- Bunch of smart constructors taking into the account the fixed point constructor HIn.
 
-empty_ :: Spine a c
+empty_ :: Spine a (Succ c)
 empty_ = HIn Empty
 
-single :: Digit a c -> Spine a c
+single :: Digit a (Succ c) -> Spine a (Succ c)
 single a = HIn (Single a)
 
-deep :: Digit a c -> Spine a (Succ c) -> Digit a c -> Spine a c
+deep :: Digit a (Succ c) -> Spine a (Suc2 c) -> Digit a (Succ c) -> Spine a (Succ c)
 deep a c b = HIn (Deep a c b)
 
 digit1 :: Node a c -> Digit a (Succ c)
@@ -94,18 +125,6 @@ instance HFunctor (Tree a) where
   hfmap f (Node2  a b    ) = Node2  (f a) (f b)
   hfmap f (Node3  a b c  ) = Node3  (f a) (f b) (f c)
   hfmap _ (Value  a      ) = Value  a
-
-instance PFunctor phi (Tree a) where
-  pfmap _ _ (Empty         ) = Empty
-  pfmap f _ (Single a      ) = Single (f undefined a)
-  pfmap f _ (Deep   a c b  ) = Deep   (f undefined a) (f undefined c) (f undefined b)
-  pfmap f _ (Digit1 a      ) = Digit1 (f undefined a)
-  pfmap f _ (Digit2 a b    ) = Digit2 (f undefined a) (f undefined b)
-  pfmap f _ (Digit3 a b c  ) = Digit3 (f undefined a) (f undefined b) (f undefined c)
-  pfmap f _ (Digit4 a b c d) = Digit4 (f undefined a) (f undefined b) (f undefined c) (f undefined d)
-  pfmap f _ (Node2  a b    ) = Node2  (f undefined a) (f undefined b)
-  pfmap f _ (Node3  a b c  ) = Node3  (f undefined a) (f undefined b) (f undefined c)
-  pfmap _ _ (Value  a      ) = Value  a
 
 instance HFoldable (Tree a) where
   hfoldMap _ (Empty         ) = K mempty
@@ -171,8 +190,8 @@ toList = unK . foldm (K . getValue)
 
 -------------------
 
-test :: FingerTree Int
-test = fromList (map value [3, 12, 44, 5, 2, 100, 20])
+testFingerTree :: FingerTree Int
+testFingerTree = fromList (map value [1, 2, 3, 4])
 
 sumAlg :: HAlg (Tree Int) (K Int)
 sumAlg (Empty         ) = K 0
@@ -224,28 +243,57 @@ data Inc f ix = Inc { unInc :: f (Fst ix, Succ (Snd ix)) }
 data Dec f ix = Dec { unDec :: f (Fst ix, Pred (Snd ix)) }
 
 insertAlg
-  :: f ~ Tree a
+  :: f ~ Tree Int
   => g ~ (N (Dec (HFix f)) :-> HFix f :*: N (HFix f))
-  => PPara (EQ (p, Succ c)) (Tree a) g
-insertAlg Refl = insertAlg'
+  => PPara IxPrf f g
+insertAlg (SpPrf _) = insertAlg'
+insertAlg (DgPrf _) = insertAlg'
+insertAlg (NdPrf _) = insertAlg'
+insertAlg p         = error ("insertAlg: suppress warnings" ++ show p)
 
 insertAlg'
-  :: f ~ Tree a
+  :: f ~ Tree Int
   => g ~ (N (Dec (HFix f)) :-> HFix f :*: N (HFix f))
   => f (HFix f :*: g) (p, Succ c) -> g (p, Succ c)
 insertAlg' u@(Empty         ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> single (digit1 z)               :*: N Nothing                          ) . unN
 insertAlg' u@(Single b      ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> deep (hfst b) empty_ (digit1 z) :*: N Nothing                          ) . unN
+insertAlg' u@(Deep   b m sf ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\z -> let _b = hsnd b # N (Just z)
+                                                                                        _m = hsnd m # N (fmap Dec (unN (hsnd _b)))
+                                                                                    in deep (hfst _b) (hfst _m) (hfst sf) :*: N Nothing                          ) . unN
 insertAlg' u@(Digit1 b      ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> digit2 z (hfst b)               :*: N Nothing                          ) . unN
 insertAlg' u@(Digit2 b c    ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> digit3 z (hfst b) (hfst c)      :*: N Nothing                          ) . unN
 insertAlg' u@(Digit3 b c d  ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> digit4 z (hfst b) (hfst c) (hfst d) :*: N Nothing                      ) . unN
 insertAlg' u@(Digit4 b c d e) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> digit2 z (hfst b)               :*: N (Just (node3 (hfst c) (hfst d) (hfst e))) ) . unN
 insertAlg' u@(Node2  b c    ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> node3  z (hfst b) (hfst c)      :*: N Nothing                          ) . unN
 insertAlg' u@(Node3  b c d  ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\(Dec z) -> node2  z (hfst b)               :*: N (Just (node2 (hfst c) (hfst d))) ) . unN
-insertAlg' u@(Deep   b m sf ) = F $ maybe (HIn (hfmap hfst u) :*: N Nothing) (\z -> let _b = hsnd b # N (Just z)
-                                                                                        _m = hsnd m # N (fmap Dec (unN (hsnd _b)))
-                                                                                    in deep (hfst b) (hfst _m) (hfst sf)  :*: N Nothing                          ) . unN
 
-insert :: Value a -> FingerTree a -> FingerTree a
-insert inp h = hfst $ ppara insertAlg Refl h # (N . Just . Dec) inp
+instance PFunctor IxPrf (Tree a) where
+  pfmap _ (SpPrf _)         (Empty         ) = Empty
+  pfmap f (SpPrf p)         (Single a      ) = Single (f (DgPrf p) a)
+  pfmap f (SpPrf p)         (Deep   a c b  ) = Deep   (f (DgPrf p) a) (f (SpPrf (SuccP p)) c) (f (DgPrf p) b)
+  pfmap f (DgPrf (SuccP p)) (Digit1 a      ) = Digit1 (f (NdPrf p) a)
+  pfmap f (DgPrf (SuccP p)) (Digit2 a b    ) = Digit2 (f (NdPrf p) a) (f (NdPrf p) b)
+  pfmap f (DgPrf (SuccP p)) (Digit3 a b c  ) = Digit3 (f (NdPrf p) a) (f (NdPrf p) b) (f (NdPrf p) c)
+  pfmap f (DgPrf (SuccP p)) (Digit4 a b c d) = Digit4 (f (NdPrf p) a) (f (NdPrf p) b) (f (NdPrf p) c) (f (NdPrf p) d)
+  pfmap f (NdPrf (SuccP p)) (Node2  a b    ) = Node2  (f (NdPrf p) a) (f (NdPrf p) b)
+  pfmap f (NdPrf (SuccP p)) (Node3  a b c  ) = Node3  (f (NdPrf p) a) (f (NdPrf p) b) (f (NdPrf p) c)
+  pfmap f (DgPrf ZeroP)     (Digit1 a      ) = Digit1 (f NdZPrf a)
+  pfmap f (DgPrf ZeroP)     (Digit2 a b    ) = Digit2 (f NdZPrf a) (f NdZPrf b)
+  pfmap f (DgPrf ZeroP)     (Digit3 a b c  ) = Digit3 (f NdZPrf a) (f NdZPrf b) (f NdZPrf c)
+  pfmap f (DgPrf ZeroP)     (Digit4 a b c d) = Digit4 (f NdZPrf a) (f NdZPrf b) (f NdZPrf c) (f NdZPrf d)
+  pfmap _ NdZPrf            (Value  a      ) = Value a
+  pfmap _ p _ = error ("PFunctor IxPrf (Tree a): suppress warnings. " ++ show p)
 
+insert :: Int -> FingerTree Int -> FingerTree Int
+insert inp h = hfst $ ppara insertAlg (SpPrf ZeroP) h # (N . Just . Dec) (value inp)
+
+myTest :: Int
+myTest = sum
+  $ insert 8
+  . insert 2
+  . insert 3
+  . insert 9
+  . insert 3
+  . insert 4
+  $ empty_
 
