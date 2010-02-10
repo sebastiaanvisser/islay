@@ -71,7 +71,7 @@ insertAlg
 insertAlg (SpPrf _) = worker
 insertAlg (DgPrf _) = worker
 insertAlg (NdPrf _) = worker
-insertAlg  NdZPrf   = error "todo: proof this impossible"
+insertAlg  NdZPrf   = error "todo: prove this impossible"
 
 worker
   :: f ~ Tree Int
