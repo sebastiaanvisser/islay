@@ -3,7 +3,7 @@ module Container.Tree.PersistentMorph where
 import Annotation.Persistent (P)
 import Data.Binary
 import Generics.Regular.Functions.Seq
-import Generics.Types
+import Generics.Fixpoint
 import Heap.Heap
 import qualified Container.Tree.Abstract as F
 import qualified Container.Tree.Morph as M

@@ -10,7 +10,7 @@ where
 
 import Control.Arrow
 import Control.Monad
-import Generics.Types
+import Generics.Fixpoint
 import qualified Annotation.Annotation as A
 
 type Q a f m c = FixA a f -> m c

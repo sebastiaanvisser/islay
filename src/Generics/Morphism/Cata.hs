@@ -6,7 +6,7 @@ import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.Lazy
 import Data.Traversable
-import Generics.Types
+import Generics.Fixpoint
 import qualified Generics.Morphism.Para as Para
 
 data AlgA (a :: (* -> *) -> * -> *) (f :: * -> *) (r :: *) where

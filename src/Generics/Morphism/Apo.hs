@@ -14,7 +14,7 @@ import Control.Category
 import Control.Monad hiding (mapM)
 import Control.Monad.Identity
 import Data.Traversable
-import Generics.Types
+import Generics.Fixpoint
 import Prelude hiding ((.), id, mapM)
 
 data CoalgA (a :: (* -> *) -> * -> *) (f :: * -> *) (s :: *) where

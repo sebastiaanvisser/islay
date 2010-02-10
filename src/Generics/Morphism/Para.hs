@@ -11,7 +11,7 @@ import Control.Monad.Lazy
 import Data.Foldable
 import Data.Traversable
 import Generics.Regular.Functions.Seq
-import Generics.Types
+import Generics.Fixpoint
 import Prelude hiding ((.), id, mapM)
 
 data AlgA (a :: (* -> *) -> * -> *) (f :: * -> *) (r :: *) where

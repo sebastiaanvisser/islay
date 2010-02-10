@@ -3,7 +3,7 @@ module Annotation.HAnnotation where
 import Control.Applicative
 import Control.Arrow
 import Control.Category
-import Generics.Types
+import Generics.Fixpoint
 import Prelude hiding ((.), id)
 
 -- todo: put forall ix. in these synonyms?

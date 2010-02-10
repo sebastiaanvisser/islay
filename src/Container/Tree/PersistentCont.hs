@@ -6,7 +6,7 @@ import Data.Binary
 import Data.Maybe
 import Generics.Cont
 import Generics.Regular.Base ()
-import Generics.Types
+import Generics.Fixpoint
 import Heap.Heap hiding (size)
 import Prelude hiding (lookup, null)
 import qualified Container.Tree.Abstract as F

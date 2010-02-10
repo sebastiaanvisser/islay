@@ -5,7 +5,7 @@ import Annotation.Annotation
 import Control.Applicative
 import Control.Monad.Identity
 import Data.Traversable
-import Generics.Types
+import Generics.Fixpoint
 import qualified Generics.Morphism.Apo as Apo
 
 data CoalgA (a :: (* -> *) -> * -> *) (f :: * -> *) (s :: *) where

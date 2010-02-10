@@ -17,7 +17,10 @@ import Control.Applicative
 import Data.Foldable hiding (toList, sum, concat)
 import Data.List (intercalate)
 import Data.Monoid
-import Generics.Types
+import Generics.Number
+import Generics.Proof
+import Generics.HigherOrder
+import Generics.Family
 
 -- Nodes in a finger tree can represent a part of the spine or a part of the
 -- fingers. The top level of the fingers are the digits which can have a branch
@@ -41,12 +44,6 @@ data IxPrf :: * -> * where
 instance Proof NatPrf c => Proof IxPrf (Sp, Succ c) where proof = SpPrf proof
 instance Proof NatPrf c => Proof IxPrf (Dg, Succ c) where proof = DgPrf proof
 instance Proof NatPrf c => Proof IxPrf (Nd, Succ c) where proof = NdPrf proof
-
-instance Show (IxPrf a) where
-  show (SpPrf p) = "(Spc_P " ++ show p ++ ")"
-  show (DgPrf p) = "(DgS_P " ++ show p ++ ")"
-  show (NdPrf p) = "(Ndc_P " ++ show p ++ ")"
-  show NdZPrf    = "NdZ_P"
 
 data Tree (a :: *) (f :: * -> *) :: * -> * where
   Empty  ::                                                       Tree a f (Sp, Succ c)
@@ -206,7 +203,7 @@ sumAlg (Node3  a b c  ) = K (unK a + unK b + unK c)
 sumAlg (Value  a      ) = K a
 
 sum :: FingerTree Int -> Int
-sum = unK . hfold (sumAlg)
+sum = unK . hcata (sumAlg)
 
 containsAlg :: Eq a => a -> HAlg (Tree a) (K Bool)
 containsAlg _ (Empty         ) = K False
@@ -221,7 +218,7 @@ containsAlg _ (Node3  a b c  ) = K (unK a || unK b || unK c)
 containsAlg v (Value  a      ) = K (a == v)
 
 contains :: Eq a => a -> FingerTree a -> Bool
-contains v = unK . hfold (containsAlg v)
+contains v = unK . hcata (containsAlg v)
 
 lookupAlg :: Eq a => a -> HAlg (Tree (a, b)) (K (Maybe b))
 lookupAlg _ (Empty         ) = K Nothing
@@ -236,7 +233,7 @@ lookupAlg _ (Node3  a b c  ) = K (unK a <|> unK b <|> unK c)
 lookupAlg v (Value  (a, b) ) = K (if a == v then Just b else Nothing)
 
 lookup :: Eq a => a -> FingerTree (a, b) -> Maybe b
-lookup v = unK . hfold (lookupAlg v)
+lookup v = unK . hcata (lookupAlg v)
 
 data N   f ix = N   { unN   :: Maybe (f (Nd, Snd ix))    }
 data Inc f ix = Inc { unInc :: f (Fst ix, Succ (Snd ix)) }
@@ -249,7 +246,7 @@ insertAlg
 insertAlg (SpPrf _) = insertAlg'
 insertAlg (DgPrf _) = insertAlg'
 insertAlg (NdPrf _) = insertAlg'
-insertAlg p         = error ("insertAlg: suppress warnings" ++ show p)
+insertAlg NdZPrf    = error "insertAlg: suppress warnings"
 
 insertAlg'
   :: f ~ Tree Int
@@ -282,7 +279,7 @@ instance PFunctor IxPrf (Tree a) where
   pfmap f (DgPrf ZeroP)     (Digit3 a b c  ) = Digit3 (f NdZPrf a) (f NdZPrf b) (f NdZPrf c)
   pfmap f (DgPrf ZeroP)     (Digit4 a b c d) = Digit4 (f NdZPrf a) (f NdZPrf b) (f NdZPrf c) (f NdZPrf d)
   pfmap _ NdZPrf            (Value  a      ) = Value a
-  pfmap _ p _ = error ("PFunctor IxPrf (Tree a): suppress warnings. " ++ show p)
+  pfmap _ _ _ = error "PFunctor IxPrf (Tree a): suppress warnings. "
 
 insert :: Int -> FingerTree Int -> FingerTree Int
 insert inp h = hfst $ ppara insertAlg (SpPrf ZeroP) h # (N . Just . Dec) (value inp)

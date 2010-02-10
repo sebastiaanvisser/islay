@@ -13,7 +13,7 @@ import Data.Binary
 import Data.Foldable hiding (all)
 import Data.Traversable
 import Generics.Regular.TH
-import Generics.Types
+import Generics.Fixpoint
 import qualified Generics.Regular as R
 import qualified Generics.Regular.Functions.Binary as G
 

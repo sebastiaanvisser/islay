@@ -15,7 +15,7 @@ import Control.Arrow
 import Control.Monad.Lazy
 import Data.Binary
 import Annotation.Annotation
-import Generics.Types
+import Generics.Fixpoint
 import Heap.Heap
 
 newtype P f a = P { unP :: Pointer (f a) }
