@@ -54,31 +54,31 @@ instance                   Proof IxPrf (Nd, Zero  ) where proof = NdZPrf
 
 type Node       a c = HFix (Tree a) (Nd, c)
 type Value      a   = Node a Zero
-type Digit      a c = HFix (Tree a) (Dg, c)
-type Spine      a c = HFix (Tree a) (Sp, c)
+type Digit      a c = HFix (Tree a) (Dg, Succ c)
+type Spine      a c = HFix (Tree a) (Sp, Succ c)
 type FingerTree a   = HFix (Tree a) (Sp, One)
 
 -- Bunch of smart constructors taking into the account the fixed point constructor HIn.
 
-empty_ :: Spine a (Succ c)
+empty_ :: Spine a c
 empty_ = HIn Empty
 
-single :: Digit a (Succ c) -> Spine a (Succ c)
+single :: Digit a c -> Spine a c
 single a = HIn (Single a)
 
-deep :: Digit a (Succ c) -> Spine a (Suc2 c) -> Digit a (Succ c) -> Spine a (Succ c)
+deep :: Digit a c -> Spine a (Succ c) -> Digit a c -> Spine a c
 deep a c b = HIn (Deep a c b)
 
-digit1 :: Node a c -> Digit a (Succ c)
+digit1 :: Node a c -> Digit a c
 digit1 a = HIn (Digit1 a)
 
-digit2 :: Node a c -> Node a c -> Digit a (Succ c)
+digit2 :: Node a c -> Node a c -> Digit a c
 digit2 a b = HIn (Digit2 a b)
 
-digit3 :: Node a c -> Node a c -> Node a c -> Digit a (Succ c)
+digit3 :: Node a c -> Node a c -> Node a c -> Digit a c
 digit3 a b c = HIn (Digit3 a b c)
 
-digit4 :: Node a c -> Node a c -> Node a c -> Node a c -> Digit a (Succ c)
+digit4 :: Node a c -> Node a c -> Node a c -> Node a c -> Digit a c
 digit4 a b c d = HIn (Digit4 a b c d)
 
 node2 :: Node a c -> Node a c -> Node a (Succ c)

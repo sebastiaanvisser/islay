@@ -13,7 +13,6 @@ import Prelude hiding (foldr, foldl, sum, lookup)
 import Control.Applicative
 import Data.Foldable hiding (toList, sum, concat)
 import Data.Monoid
-import Generics.Number
 import Generics.HigherOrder
 import Container.FingerTree.Abstract
 
@@ -21,7 +20,7 @@ import Container.FingerTree.Abstract
 
 infixr 5 <|
 
-(<|) :: Node a c -> Spine a (Succ c) -> Spine a (Succ c)
+(<|) :: Node a c -> Spine a c -> Spine a c
 a <| (HIn (Deep ( HIn (Digit1 b      ))   m sf)) = deep   (digit2 a b    ) m                  sf
 a <| (HIn (Deep ( HIn (Digit2 b c    ))   m sf)) = deep   (digit3 a b c  ) m                  sf
 a <| (HIn (Deep ( HIn (Digit3 b c d  ))   m sf)) = deep   (digit4 a b c d) m                  sf
@@ -31,7 +30,7 @@ a <| (HIn (Empty                              )) = single (digit1 a)
 
 infixr 5 |>
 
-(|>) :: Spine a (Succ c) -> Node a c -> Spine a (Succ c)
+(|>) :: Spine a c -> Node a c -> Spine a c
 (HIn (Deep pr m (HIn (Digit1       b  )))) |> a = deep   pr m                  (digit2     b a)
 (HIn (Deep pr m (HIn (Digit2     c b  )))) |> a = deep   pr m                  (digit3   c b a)
 (HIn (Deep pr m (HIn (Digit3   d c b  )))) |> a = deep   pr m                  (digit4 d c b a)
