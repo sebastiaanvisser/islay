@@ -101,3 +101,24 @@ type HPara f g = f (HFix f :*: g) :~> g
 hpara :: HFunctor f => HPara f a -> HFix f :~> a
 hpara f (HIn u) = f (hfmap (\x -> x :*: hpara f x) u)
 
+
+
+
+
+
+
+
+newtype HFixA
+    (a :: ((* -> *) -> * -> *) -> (* -> *) -> * -> *)
+    (h :: (* -> *) -> * -> *)
+    (ix :: *)
+  = HInA { houtA :: a h (HFixA a h) ix }
+
+newtype HId (h  :: (* -> *) -> * -> *)
+            (b  :: * -> *)
+            (ix :: *)
+          = HId { unHId :: h b ix }
+  deriving Show
+
+type HFix1 = HFixA HId
+
