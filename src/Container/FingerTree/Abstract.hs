@@ -159,3 +159,20 @@ instance HTraversable (Tree a) where
   htraverse f (Node3  a b c  ) = C (Node3  <$> unC (f a) <*> unC (f b) <*> unC (f c))
   htraverse _ (Value  a      ) = C (pure (Value a))
 
+instance PTraversable IxPrf (Tree a) where
+  ptraverse _ (SpPrf _)         (Empty         ) = pure Empty
+  ptraverse f (SpPrf p)         (Single a      ) = Single <$> f (DgPrf p) a
+  ptraverse f (SpPrf p)         (Deep   a c b  ) = Deep   <$> f (DgPrf p) a <*> f (SpPrf (SuccP p)) c <*> f (DgPrf p) b
+  ptraverse f (DgPrf (SuccP p)) (Digit1 a      ) = Digit1 <$> f (NdPrf p) a
+  ptraverse f (DgPrf (SuccP p)) (Digit2 a b    ) = Digit2 <$> f (NdPrf p) a <*> f (NdPrf p) b
+  ptraverse f (DgPrf (SuccP p)) (Digit3 a b c  ) = Digit3 <$> f (NdPrf p) a <*> f (NdPrf p) b <*> f (NdPrf p) c
+  ptraverse f (DgPrf (SuccP p)) (Digit4 a b c d) = Digit4 <$> f (NdPrf p) a <*> f (NdPrf p) b <*> f (NdPrf p) c <*> f (NdPrf p) d
+  ptraverse f (NdPrf (SuccP p)) (Node2  a b    ) = Node2  <$> f (NdPrf p) a <*> f (NdPrf p) b
+  ptraverse f (NdPrf (SuccP p)) (Node3  a b c  ) = Node3  <$> f (NdPrf p) a <*> f (NdPrf p) b <*> f (NdPrf p) c
+  ptraverse f (DgPrf ZeroP)     (Digit1 a      ) = Digit1 <$> f NdZPrf a
+  ptraverse f (DgPrf ZeroP)     (Digit2 a b    ) = Digit2 <$> f NdZPrf a <*> f NdZPrf b
+  ptraverse f (DgPrf ZeroP)     (Digit3 a b c  ) = Digit3 <$> f NdZPrf a <*> f NdZPrf b <*> f NdZPrf c
+  ptraverse f (DgPrf ZeroP)     (Digit4 a b c d) = Digit4 <$> f NdZPrf a <*> f NdZPrf b <*> f NdZPrf c <*> f NdZPrf d
+  ptraverse _ NdZPrf            (Value  a      ) = pure (Value a)
+  ptraverse _ _ _ = error "PFunctor IxPrf (Tree a): suppress warnings. "
+
