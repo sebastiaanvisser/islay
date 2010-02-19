@@ -4,8 +4,10 @@ module Heap.Heap
   , HeapR
   , HeapW
   , R.retrieve
+  , R.hretrieve
   , A.allocate
   , W.store
+  , W.hstore
   , W.unsafeReuse
   )
 where

@@ -70,6 +70,9 @@ class HFunctor h where
 instance Functor f => HFunctor ((:.:) f) where
   hfmap f = C . fmap f . unC
 
+instance HFunctor ((:*:) c) where
+  hfmap f (c :*: a) = c :*: f a
+
 -- Higher order foldable and traversable.
 
 class HFoldable h where
@@ -78,8 +81,11 @@ class HFoldable h where
 foldm :: (HFoldable h, Monoid m) => (forall b. h b :~> K m) -> HFix h :~> K m
 foldm f = hfoldMap (\x -> f (hout x) `mappend` foldm f x) . hout
 
-class (HFunctor h, HFoldable h) => HTraversable h where
-  htraverse :: Applicative f => (a :~> f :.: b) -> (h a :~> f :.: h b)
+class HFunctor h => HTraversable h where
+  htraverse :: Applicative f => (forall ix. a ix -> f (b ix)) -> (forall ix. h a ix -> f (h b ix))
+
+instance HTraversable ((:*:) c) where
+  htraverse f (c :*: a) = (c :*:) <$> f a
 
 -- Higher order applicative.
 
@@ -108,17 +114,15 @@ hpara f (HIn u) = f (hfmap (\x -> x :*: hpara f x) u)
 
 
 
-newtype HFixA
+data HFixA
     (a :: ((* -> *) -> * -> *) -> (* -> *) -> * -> *)
-    (h :: (* -> *) -> * -> *)
+    (f :: (* -> *) -> * -> *)
     (ix :: *)
-  = HInA { houtA :: a h (HFixA a h) ix }
+  = HInA { houtA :: a f (HFixA a f) ix }
+  | HInF { houtF ::   f (HFixA a f) ix }
 
-newtype HId (h  :: (* -> *) -> * -> *)
+newtype HId (f  :: (* -> *) -> * -> *)
             (b  :: * -> *)
             (ix :: *)
-          = HId { unHId :: h b ix }
-  deriving Show
-
-type HFix1 = HFixA HId
+          = HId { unHId :: f b ix }
 

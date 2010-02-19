@@ -1,38 +1,72 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, RankNTypes #-}
+{-# LANGUAGE MultiParamTypeClasses, TypeOperators, FlexibleInstances, RankNTypes #-}
 module Annotation.HAnnotation where
 
+import Control.Monad
 import Control.Applicative
-import Control.Arrow
-import Control.Category
 import Generics.HigherOrder
-import Prelude hiding ((.), id)
+import Generics.Family
 
-type Produce a h m = forall ix. Kleisli m (h (HFixA a h) ix)  (  (HFixA a h  ix))
-type Query   a h m = forall ix. Kleisli m    (HFixA a h  ix)  (h (HFixA a h) ix)
-type Modify  a h m = forall ix. Kleisli m (h (HFixA a h) ix)  (h (HFixA a h) ix)
-                             -> Kleisli m (  (HFixA a h  ix)) (  (HFixA a h  ix))
+type In    a h phi m =  forall ix. phi ix -> h (HFixA a h) ix -> m    (HFixA a h  ix)
+type Out   a h phi m =  forall ix. phi ix ->    HFixA a h  ix -> m (h (HFixA a h) ix)
+type OutIn a h phi m = (forall ix. phi ix -> h (HFixA a h) ix ->    h (HFixA a h) ix)
+                     -> forall ix. phi ix ->    HFixA a h  ix -> m    (HFixA a h  ix)
 
-class (Applicative m, Monad m) => HAnnQ a h m where
-  query :: Query a h m
+class (Applicative m, Monad m) => AnnO a h phi m where
+  annO :: Out a h phi m
 
-class (Applicative m, Monad m) => HAnnP a h m where
-  produce :: Produce a h m
+class (Applicative m, Monad m) => AnnI a h phi m where
+  annI :: In a h phi m
 
-class (HAnnQ a h m, HAnnP a h m) => HAnnM a h m where
-  modify :: Modify a h m
-  modify f = produce . f . query
+class (AnnO a h phi m, AnnI a h phi m) => AnnOI a h phi m where
+  annOI :: OutIn a h phi m
+  annOI f phi = annI phi <=< return . f phi <=< annO phi
 
-runQuery :: HAnnQ a h m => HFixA a h ix -> m (h (HFixA a h) ix)
-runQuery = runKleisli query
+-- Remove all annotations from a recursive structure. This function assumes
+-- that an unannotated node can never have any annotated descendants.
 
-runProduce :: HAnnP a h m => h (HFixA a h) ix -> m (HFixA a h ix)
-runProduce = runKleisli produce
+fullyOut :: (AnnO a h phi m, PTraversable phi h) => phi ix -> HFixA a h ix -> m (HFixA a h ix)
+fullyOut phi (HInA f) = annO phi (HInA f) >>= fmap HInF . ptraverse fullyOut phi
+fullyOut _   a        = return a
 
-instance (Applicative m, Monad m) => HAnnQ HId h m where
-  query = Kleisli (return . unHId . houtA)
+-- Fully annotate a recursive structure. This function assumes that an
+-- annotated node can never have any descendants without annotation.
 
-instance (Applicative m, Monad m) => HAnnP HId h m where
-  produce = Kleisli (return . HInA . HId)
+fullyIn :: (AnnI a h phi m, PTraversable phi h) => phi ix -> HFixA a h ix -> m (HFixA a h ix)
+fullyIn phi (HInF f) = ptraverse fullyIn phi f >>= annI phi
+fullyIn _   a        = return a
 
-instance (Applicative m, Monad m) => HAnnM HId h m
+-- pairI
+--   :: (AnnI a h phi m, PTraversable phi h)
+--   => phi ix
+--   ->    (HFixA a h :*: HFixA a h) ix
+--   -> m ((HFixA a h :*: HFixA a h) ix)
+-- pairI phi (a :*: b) = (:*:) <$> fullyIn phi a <*> fullyIn phi b
+
+-- fullyI :: (AnnI a h phi m, PTraversable phi h, PTraversable phi g) => phi ix -> g (HFixA a h) ix -> m (g (HFixA a h) ix)
+-- fullyI phi = ptraverse fullyIn phi
+
+
+-- instance (Producer h, Producer g) => Producer (h :*: g) where
+--   producer (f :*: g) = producer f :*: producer g
+
+-- instance (Producer h, Producer g) => Producer (h :+: g) where
+--   producer (L g) = L (producer g)
+--   producer (R g) = R (producer g)
+
+-- instance Producer b => Producer (a :-> b) where
+--   producer (F f) = F (producer . f)
+
+
+
+
+-- Higher order identity annotation.
+
+instance (Applicative m, Monad m) => AnnO HId h phi m where
+  annO _ (HInA (HId f)) = return f
+  annO _ (HInF       f) = return f
+
+instance (Applicative m, Monad m) => AnnI HId h phi m where
+  annI _ = return . HInA . HId
+
+instance (Applicative m, Monad m) => AnnOI HId h phi m
 

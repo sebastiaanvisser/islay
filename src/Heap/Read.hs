@@ -1,6 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Heap.Read where
 
+import Data.Binary.Indexed
 import Control.Applicative
 import Control.Monad.Lazy
 import Control.Monad.Reader
@@ -27,6 +28,10 @@ run h (Heap c) = runReaderT c h
 
 retrieve :: Binary a => Pointer a -> Heap a
 retrieve (Ptr p) = decode . fm <$> read p
+  where fm = fromMaybe (error "retrieve failed")
+
+hretrieve :: HBinary phi h => phi ix -> Pointer (h ix) -> Heap (h ix)
+hretrieve phi (Ptr p) = hdecode phi . fm <$> read p
   where fm = fromMaybe (error "retrieve failed")
 
 safeOffset :: Offset -> Heap a -> Heap (Maybe a)

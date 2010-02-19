@@ -10,6 +10,7 @@ import Control.Monad.Lazy
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Binary
+import Data.Binary.Indexed
 import Data.Maybe
 import Data.Record.Label
 import Prelude hiding (read)
@@ -39,6 +40,13 @@ instance LiftLazy R.Heap Heap where
 store :: Binary a => a -> Heap (Pointer a)
 store f =
   do let bits = encode f
+     block <- (Heap . A.allocate . fromIntegral . B.length) bits
+     write bits block
+     return (Ptr (_offset block))
+
+hstore :: HBinary phi h => phi ix -> h ix -> Heap (Pointer (h ix))
+hstore phi f =
+  do let bits = hencode phi f
      block <- (Heap . A.allocate . fromIntegral . B.length) bits
      write bits block
      return (Ptr (_offset block))
