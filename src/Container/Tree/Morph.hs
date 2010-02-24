@@ -1,5 +1,6 @@
 module Container.Tree.Morph where
 
+import Generics.Fixpoint
 import qualified Container.Tree.Abstract as F
 import qualified Generics.Morphism.Ana as Ana ()
 import qualified Generics.Morphism.Apo as Apo
@@ -8,15 +9,15 @@ import qualified Generics.Morphism.Para as Para
 
 -- Insert is WRONG! see EQ case that throws existing k v. 
 
-insert :: Ord k => k -> v -> Apo.Endo (F.Tree k v)
-insert k v s =
+insert :: Ord k => k -> v -> Apo.CoEndo (F.Tree k v)
+insert k v = Apo.Phi $ \(InF s) ->
   case s of
     F.Branch m w l r ->
       case k `compare` m of
-        LT -> F.Branch m w (Left l)               (Right (Left r))
-        EQ -> F.Branch k v (Right (Left l))       (Left r)
-        GT -> F.Branch m w (Right (Left l))       (Right (Left r))
-    F.Leaf -> F.Branch k v (Right (Right F.Leaf)) (Right (Right F.Leaf))
+        LT -> F.Branch m w (Left  l)            (Left  r)
+        EQ -> F.Branch k v (Right l)            (Left  r)
+        GT -> F.Branch m w (Right l)            (Right r)
+    F.Leaf -> F.Branch k v (Right (InF F.Leaf)) (Right (InF F.Leaf))
 
 fromList :: Apo.Coalg [(k, v)] (F.Tree k v)
 fromList = Apo.Phi $ \f ->

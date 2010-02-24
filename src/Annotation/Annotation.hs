@@ -5,37 +5,47 @@
 module Annotation.Annotation where
 
 import Control.Applicative
-import Control.Arrow
-import Control.Category
+import Control.Monad
+import Data.Traversable
 import Generics.Fixpoint
-import Prelude hiding ((.), id)
 
-type Produce a f m = Kleisli m (f (FixA a f)) (  (FixA a f))
-type Query   a f m = Kleisli m (  (FixA a f)) (f (FixA a f))
-type Modify  a f m = Kleisli m (f (FixA a f)) (f (FixA a f))
-                  -> Kleisli m (  (FixA a f)) (  (FixA a f))
+type In    a f m =  (f (FixA a f)) -> m (  (FixA a f))
+type Out   a f m =  (  (FixA a f)) -> m (f (FixA a f))
+type InOut a f m = ((f (FixA a f)) -> m (f (FixA a f)))
+                 -> (  (FixA a f)) -> m (  (FixA a f))
 
-class (Applicative m, Monad m) => AnnQ a f m where
-  query :: Query a f m
+class (Applicative m, Monad m) => AnnO a f m where
+  annO :: Out a f m
 
-class (Applicative m, Monad m) => AnnP a f m where
-  produce :: Produce a f m
+class (Applicative m, Monad m) => AnnI a f m where
+  annI :: In a f m
 
-class (AnnQ a f m, AnnP a f m) => AnnM a f m where
-  modify :: Modify a f m
-  modify f = produce . f . query
+class (AnnO a f m, AnnI a f m) => AnnIO a f m where
+  annIO :: InOut a f m
+  annIO f = annI <=< f <=< annO
 
-runQuery :: AnnQ a f m => FixA a f -> m (f (FixA a f))
-runQuery = runKleisli query
+-- Remove all annotations from a recursive structure. This function assumes
+-- that an unannotated node can never have any annotated descendants.
 
-runProduce :: AnnP a f m => f (FixA a f) -> m (FixA a f)
-runProduce = runKleisli produce
+fullyOut :: (Traversable f, AnnO a f m) => FixA a f -> m (FixA a f)
+fullyOut (InA f) = annO (InA f) >>= fmap InF . traverse fullyOut
+fullyOut a       = return a
 
-instance (Applicative m, Monad m) => AnnQ Id f m where
-  query = Kleisli (return . unId . out)
+-- Fully annotate a recursive structure. This function assumes that an
+-- annotated node can never have any descendants without annotation.
 
-instance (Applicative m, Monad m) => AnnP Id f m where
-  produce = Kleisli (return . In . Id)
+fullyIn :: (Traversable f, AnnI a f m) => FixA a f -> m (FixA a f)
+fullyIn (InF f) = traverse fullyIn f >>= annI 
+fullyIn a       = return a
 
-instance (Applicative m, Monad m) => AnnM Id f m
+-- The instance for the identity annotation just unpacks the constructor.
+
+instance (Applicative m, Monad m) => AnnO Id f m where
+  annO (InA (Id f)) = return f
+  annO (InF     f ) = return f
+
+instance (Applicative m, Monad m) => AnnI Id f m where
+  annI = return . InA . Id
+
+instance (Applicative m, Monad m) => AnnIO Id f m
 

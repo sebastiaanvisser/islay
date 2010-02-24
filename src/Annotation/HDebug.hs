@@ -39,7 +39,7 @@ instance (Applicative m, MonadIO m, HShow (h (HFixA HDebug h))) => AnnO HDebug h
 instance (Applicative m, MonadIO m, HShow (h (HFixA HDebug h))) => AnnI HDebug h phi m where
   annI _ h = HInA . HDebug <$> printer "produce" h
 
-instance (Applicative m, MonadIO m, HShow (h (HFixA HDebug h))) => AnnOI HDebug h phi m
+instance (Applicative m, MonadIO m, HShow (h (HFixA HDebug h))) => AnnIO HDebug h phi m
 
 printer :: (MonadIO m, Show (b ix)) => String -> b ix -> m (b ix)
 printer s = (\f -> liftIO (print s >> print (show f)) >> return f)

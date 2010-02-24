@@ -47,5 +47,6 @@ instance (Binary k, Binary v, Binary f) => Binary (Tree k v f) where
   get = G.gget
 
 instance (Show k, Show v) => Show (FixA Id (Tree k v)) where
-  show = show . unId . out
+  show (InA (Id f)) = show f
+  show (InF     f ) = show f
 

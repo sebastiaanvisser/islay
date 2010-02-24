@@ -1,14 +1,18 @@
-{-# LANGUAGE MultiParamTypeClasses, TypeOperators, FlexibleInstances, RankNTypes #-}
+{-# LANGUAGE
+    MultiParamTypeClasses
+  , FlexibleInstances
+  , RankNTypes
+  #-}
 module Annotation.HAnnotation where
 
-import Control.Monad
 import Control.Applicative
-import Generics.HigherOrder
+import Control.Monad
 import Generics.Family
+import Generics.HigherOrder
 
 type In    a h phi m =  forall ix. phi ix -> h (HFixA a h) ix -> m    (HFixA a h  ix)
 type Out   a h phi m =  forall ix. phi ix ->    HFixA a h  ix -> m (h (HFixA a h) ix)
-type OutIn a h phi m = (forall ix. phi ix -> h (HFixA a h) ix ->    h (HFixA a h) ix)
+type InOut a h phi m = (forall ix. phi ix -> h (HFixA a h) ix ->    h (HFixA a h) ix)
                      -> forall ix. phi ix ->    HFixA a h  ix -> m    (HFixA a h  ix)
 
 class (Applicative m, Monad m) => AnnO a h phi m where
@@ -17,9 +21,9 @@ class (Applicative m, Monad m) => AnnO a h phi m where
 class (Applicative m, Monad m) => AnnI a h phi m where
   annI :: In a h phi m
 
-class (AnnO a h phi m, AnnI a h phi m) => AnnOI a h phi m where
-  annOI :: OutIn a h phi m
-  annOI f phi = annI phi <=< return . f phi <=< annO phi
+class (AnnO a h phi m, AnnI a h phi m) => AnnIO a h phi m where
+  annIO :: InOut a h phi m
+  annIO f phi = annI phi . f phi <=< annO phi
 
 -- Remove all annotations from a recursive structure. This function assumes
 -- that an unannotated node can never have any annotated descendants.
@@ -35,38 +39,14 @@ fullyIn :: (AnnI a h phi m, PTraversable phi h) => phi ix -> HFixA a h ix -> m (
 fullyIn phi (HInF f) = ptraverse fullyIn phi f >>= annI phi
 fullyIn _   a        = return a
 
--- pairI
---   :: (AnnI a h phi m, PTraversable phi h)
---   => phi ix
---   ->    (HFixA a h :*: HFixA a h) ix
---   -> m ((HFixA a h :*: HFixA a h) ix)
--- pairI phi (a :*: b) = (:*:) <$> fullyIn phi a <*> fullyIn phi b
-
--- fullyI :: (AnnI a h phi m, PTraversable phi h, PTraversable phi g) => phi ix -> g (HFixA a h) ix -> m (g (HFixA a h) ix)
--- fullyI phi = ptraverse fullyIn phi
-
-
--- instance (Producer h, Producer g) => Producer (h :*: g) where
---   producer (f :*: g) = producer f :*: producer g
-
--- instance (Producer h, Producer g) => Producer (h :+: g) where
---   producer (L g) = L (producer g)
---   producer (R g) = R (producer g)
-
--- instance Producer b => Producer (a :-> b) where
---   producer (F f) = F (producer . f)
-
-
-
-
--- Higher order identity annotation.
+-- The instance for the identity annotation just unpacks the constructor.
 
 instance (Applicative m, Monad m) => AnnO HId h phi m where
   annO _ (HInA (HId f)) = return f
-  annO _ (HInF       f) = return f
+  annO _ (HInF      f ) = return f
 
 instance (Applicative m, Monad m) => AnnI HId h phi m where
   annI _ = return . HInA . HId
 
-instance (Applicative m, Monad m) => AnnOI HId h phi m
+instance (Applicative m, Monad m) => AnnIO HId h phi m
 

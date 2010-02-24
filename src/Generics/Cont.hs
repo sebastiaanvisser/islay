@@ -1,38 +1,24 @@
-module Generics.Cont
-( Query
-, Produce
-, Modify
-, mkQuery
-, mkProducer
-, mkModifier
-)
-where
+{-# LANGUAGE ScopedTypeVariables #-}
+module Generics.Cont where
 
-import Control.Arrow
+import Control.Applicative
 import Control.Monad
 import Generics.Fixpoint
 import qualified Annotation.Annotation as A
 
-type Q a f m c = FixA a f -> m c
-type P a f m   = FixA1 a f -> m (FixA a f)
+type O a f m c = FixA a f -> m c
+type I a f m   = f (FixA a f) -> m (FixA a f)
 
-type Query   a f m c = Q a f m c          -> FixA1 a f -> m c
-type Produce a f m   = P a f m            -> m (FixA a f)
-type Modify  a f m   = Q a f m (FixA a f)
-                    -> P a f m            -> FixA1 a f -> m (FixA a f)
+type AnnO  a f m c = O a f m c                     -> f (FixA a f) -> m c
+type AnnI  a f m   = I a f m                                       -> m (FixA a f)
+type AnnIO a f m   = O a f m (FixA a f) -> I a f m -> f (FixA a f) -> m (FixA a f)
 
-mkQuery :: A.AnnQ a f m => Query a f m c -> FixA2 a f -> m c
-mkQuery q = fix (q . (<=< qC)) <=< qC . In
+mkAnnO :: forall a f m c.  A.AnnO a f m => AnnO a f m c -> a f (FixA a f) -> m c
+mkAnnO q = fix (q . (<=< A.annO)) <=< A.annO . InA 
 
-mkProducer :: A.AnnP a f m => Produce a f m -> m (FixA2 a f)
-mkProducer p = out `liftM` p pC
+mkAnnI :: A.AnnI a f m => AnnI a f m -> m (a f (FixA a f))
+mkAnnI p = outa <$> p A.annI
 
-mkModifier :: A.AnnM a f m => Modify a f m -> FixA2 a f -> m (FixA2 a f)
-mkModifier m = liftM out . fix (flip m pC . (<=< qC)) <=< qC . In
-
-qC :: A.AnnQ a f m => FixA a f -> m (f (FixA a f))
-qC = runKleisli A.query
-
-pC :: A.AnnP a f m => f (FixA a f) -> m (FixA a f)
-pC = runKleisli A.produce
+mkAnnIO :: A.AnnIO a f m => AnnIO a f m -> a f (FixA a f) -> m (a f (FixA a f))
+mkAnnIO m = liftM outa . fix (flip m A.annI . (<=< A.annO)) <=< A.annO . InA 
 

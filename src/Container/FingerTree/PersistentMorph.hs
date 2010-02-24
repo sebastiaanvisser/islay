@@ -1,14 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Container.FingerTree.PersistentMorph where
 
-import Control.Monad.Lazy
 import Annotation.HAnnotation
 import Annotation.HPersistent
 import Container.FingerTree.Abstract
 import Container.FingerTree.Morph
 import Control.Applicative hiding (empty)
+import Control.Monad.Lazy
 import Control.Monad.Trans
-import Generics.Family
 import Generics.HigherOrder
 import Generics.Morphism.HPara
 import Generics.Number
@@ -16,7 +15,6 @@ import Heap.Heap
 import Prelude hiding (sum)
 
 type PFingerTree = FingerTree P Int
-
 
 sum :: AnnO a (Tree Int) Phi m => FingerTree a Int -> m Int
 sum h = unK <$> hcataA sumAlg (SpPrf ZeroP) h
@@ -27,15 +25,10 @@ sum h = unK <$> hcataA sumAlg (SpPrf ZeroP) h
 -- lookup :: Eq k => k -> FingerTree a (k, v) -> Maybe v
 -- lookup v = unK . hcata (lookupAlg v)
 
-apenpoep
-  :: (AnnI a h phi m, PTraversable phi h, PTraversable phi f)
-  => phi ix -> f (HFixA a h) ix -> m (f (HFixA a h) ix)
-apenpoep phi a = ptraverse fullyIn phi a
-
 emptyFT :: AnnI a (Tree b) Phi m => m (FingerTree a b)
 emptyFT = annI (SpPrf ZeroP) (houtF empty)
 
-insert :: AnnOI a (Tree b) Phi m => b -> FingerTree a b -> m (FingerTree a b)
+insert :: AnnIO a (Tree b) Phi m => b -> FingerTree a b -> m (FingerTree a b)
 insert inp h =
   do f <- hparaEndoA insertAlg (SpPrf ZeroP) h
      let a = hfst (f # (N . Just . Dec) (value inp))
